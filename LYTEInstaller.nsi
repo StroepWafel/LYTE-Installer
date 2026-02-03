@@ -22,8 +22,25 @@ Unicode True
 !define MUI_HEADERIMAGE
 !define MUI_HEADERIMAGE_BITMAP "branding\headerimage.bmp"
 !define MUI_HEADERIMAGE_RIGHT
+!define MUI_HEADERIMAGE_BITMAP_NOSTRETCH
+; Wizard bitmap for welcome/finish pages
+; Requirements: 164x314 pixels (or close), 24-bit BMP format (RGB, no alpha channel)
+; IMPORTANT: MUI2 requires 24-bit RGB format. If your image appears white/blank, convert it to 24-bit RGB.
 !define MUI_WELCOMEFINISHPAGE_BITMAP "branding\wizard.bmp"
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "branding\wizard.bmp"
+!define MUI_WELCOMEFINISHPAGE_BITMAP_NOSTRETCH
+
+; Modern UI 2 Configuration
+; Note: MUI2 doesn't support MUI_BGCOLOR or MUI_TEXTCOLOR defines
+; Colors are controlled by the bitmap images and Windows theme
+!define MUI_INSTFILESPAGE_PROGRESSBAR "smooth"
+!define MUI_INSTFILESPAGE_PROGRESSBAR_COLOR "#0078D4"
+
+; Modern UI 2 Branding
+!define MUI_WELCOMEPAGE_TITLE "Welcome to LYTE Setup"
+!define MUI_WELCOMEPAGE_TEXT "This wizard will guide you through the installation of LYTE.$\r$\n$\r$\nClick Next to continue."
+!define MUI_FINISHPAGE_TITLE "Installation Complete"
+!define MUI_FINISHPAGE_TEXT "LYTE has been successfully installed on your computer.$\r$\n$\r$\nClick Finish to exit the setup wizard."
 
 ;--------------------------------
 ; Variables for config options
@@ -44,12 +61,18 @@ Var VersionPageDialog
 Var ShortcutsPageDialog
 Var ShortcutsLabel
 
+; Variables for modern UI fonts
+Var ModernFont
+Var ModernFontBold
+Var ModernFontTitle
+
 ; Variables for uninstall
 Var RemoveSettings
 
 ;--------------------------------
 ; Pages
 ;--------------------------------
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW .onWelcomePage
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "license.txt"
 Page custom VersionPageCreate VersionPageLeave
@@ -57,9 +80,12 @@ Page custom VersionPageCreate VersionPageLeave
 !insertmacro MUI_PAGE_DIRECTORY
 Page custom ComponentsPageCreate ComponentsPageLeave
 Page custom ShortcutsPageCreate ShortcutsPageLeave
+!define MUI_INSTFILESPAGE_SHOW_DETAILS
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_RUN "$INSTDIR\LYTE.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Launch LYTE"
+!define MUI_FINISHPAGE_RUN_PARAMETERS ""
+!define MUI_FINISHPAGE_SHOWREADME ""
 !insertmacro MUI_PAGE_FINISH
 
 ; Uninstaller pages
@@ -72,6 +98,38 @@ Page custom ShortcutsPageCreate ShortcutsPageLeave
 ; Languages
 ;--------------------------------
 !insertmacro MUI_LANGUAGE "English"
+
+;--------------------------------
+; Modern UI Font Initialization
+;--------------------------------
+Function .onInit
+  ; Create modern fonts for custom pages
+  CreateFont $ModernFont "Segoe UI" "9" "400"
+  CreateFont $ModernFontBold "Segoe UI" "9" "700"
+  CreateFont $ModernFontTitle "Segoe UI" "12" "700"
+FunctionEnd
+
+;--------------------------------
+; Welcome Page Enhancement
+;--------------------------------
+Function .onWelcomePage
+  ; Set welcome page text colors for better visibility
+  FindWindow $0 "#32770" "" $HWNDPARENT
+  ${If} $0 <> 0
+    ; Get the title control (ID 1037)
+    GetDlgItem $1 $0 1037
+    ${If} $1 <> 0
+      SendMessage $1 ${WM_SETFONT} $ModernFontTitle 0
+      SetCtlColors $1 0x1A1A1A transparent
+    ${EndIf}
+    ; Get the text control (ID 1036)
+    GetDlgItem $1 $0 1036
+    ${If} $1 <> 0
+      SendMessage $1 ${WM_SETFONT} $ModernFont 0
+      SetCtlColors $1 0x1A1A1A transparent
+    ${EndIf}
+  ${EndIf}
+FunctionEnd
 
 ;--------------------------------
 ; Directory Page Functions
@@ -115,14 +173,24 @@ Function VersionPageCreate
     Abort
   ${EndIf}
 
-  ${NSD_CreateLabel} 0 10 100% 30 "Select which LYTE release to download."
+  ; Title label with modern styling
+  ${NSD_CreateLabel} 0 20 100% 30 "Select LYTE Version"
   Pop $0
+  SendMessage $0 ${WM_SETFONT} $ModernFontTitle 0
+  SetCtlColors $0 0x1A1A1A transparent
 
-  ${NSD_CreateLabel} 0 40 100% 30 "Default is latest. Pick a specific release tag if you need an older version."
+  ; Description label
+  ${NSD_CreateLabel} 0 55 100% 40 "Choose which LYTE release to download. The latest version is recommended for most users."
   Pop $0
+  SendMessage $0 ${WM_SETFONT} $ModernFont 0
+  SetCtlColors $0 0x666666 transparent
 
-  ${NSD_CreateDropList} 20 75 60% 100 ""
+  ; Version dropdown with better spacing
+  ${NSD_CreateDropList} 20 105 70% 20 ""
   Pop $VersionDropdown
+  SendMessage $VersionDropdown ${WM_SETFONT} $ModernFont 0
+  SetCtlColors $VersionDropdown 0x1A1A1A 0xFFFFFF
+  
   ${NSD_CB_AddString} $VersionDropdown "latest (recommended)"
   ${NSD_CB_AddString} $VersionDropdown "1.10.1-Release"
   ${NSD_CB_AddString} $VersionDropdown "1.10.0-Release"
@@ -172,28 +240,37 @@ Function ComponentsPageCreate
     Abort
   ${EndIf}
 
-  ; Page title
-  ${NSD_CreateLabel} 0 10 100% 20 "Select Components to Install"
+  ; Page title with modern styling
+  ${NSD_CreateLabel} 0 20 100% 30 "Select Components to Install"
   Pop $ComponentsLabel
-  SendMessage $ComponentsLabel ${WM_SETFONT} 0 0
+  SendMessage $ComponentsLabel ${WM_SETFONT} $ModernFontTitle 0
+  SetCtlColors $ComponentsLabel 0x1A1A1A transparent
 
-  ; Description
-  ${NSD_CreateLabel} 0 35 100% 30 "Choose which additional components you want to install with LYTE. Uncheck any components you don't need."
+  ; Description with improved spacing
+  ${NSD_CreateLabel} 0 55 100% 40 "Choose which additional components you want to install with LYTE. Uncheck any components you don't need."
   Pop $0
+  SendMessage $0 ${WM_SETFONT} $ModernFont 0
+  SetCtlColors $0 0x666666 transparent
 
-  ; Python component
-  ${NSD_CreateCheckBox} 20 75 90% 26 "Python 3.13.11 (required; needs ~7GB free space)"
+  ; Python component with better spacing
+  ${NSD_CreateCheckBox} 20 105 90% 24 "Python 3.13.11 (required; needs ~7GB free space)"
   Pop $PythonCheckbox
+  SendMessage $PythonCheckbox ${WM_SETFONT} $ModernFont 0
+  SetCtlColors $PythonCheckbox 0x1A1A1A transparent
   ${NSD_SetState} $PythonCheckbox ${BST_CHECKED}
 
   ; VLC component
-  ${NSD_CreateCheckBox} 20 105 90% 26 "VLC Media Player (playback support; needs ~60MB free space)"
+  ${NSD_CreateCheckBox} 20 135 90% 24 "VLC Media Player (playback support; needs ~60MB free space)"
   Pop $VLCCheckbox
+  SendMessage $VLCCheckbox ${WM_SETFONT} $ModernFont 0
+  SetCtlColors $VLCCheckbox 0x1A1A1A transparent
   ${NSD_SetState} $VLCCheckbox ${BST_CHECKED}
 
   ; VC++ Redistributable component
-  ${NSD_CreateCheckBox} 20 135 90% 26 "Microsoft Visual C++ Redistributable (required by other components; needs ~16MB)"
+  ${NSD_CreateCheckBox} 20 165 90% 24 "Microsoft Visual C++ Redistributable (required by other components; needs ~16MB)"
   Pop $VCRedistCheckbox
+  SendMessage $VCRedistCheckbox ${WM_SETFONT} $ModernFont 0
+  SetCtlColors $VCRedistCheckbox 0x1A1A1A transparent
   ${NSD_SetState} $VCRedistCheckbox ${BST_CHECKED}
 
   nsDialogs::Show
@@ -216,18 +293,32 @@ Function ShortcutsPageCreate
     Abort
   ${EndIf}
 
-  ${NSD_CreateLabel} 0 10 100% 20 "Choose which shortcuts to create"
+  ; Title with modern styling
+  ${NSD_CreateLabel} 0 20 100% 30 "Choose Shortcuts"
   Pop $ShortcutsLabel
-  SendMessage $ShortcutsLabel ${WM_SETFONT} 0 0
+  SendMessage $ShortcutsLabel ${WM_SETFONT} $ModernFontTitle 0
+  SetCtlColors $ShortcutsLabel 0x1A1A1A transparent
 
-  ${NSD_CreateCheckBox} 20 45 100% 15 "Create Start Menu shortcut"
+  ; Description
+  ${NSD_CreateLabel} 0 55 100% 40 "Select where you would like shortcuts to be created for easy access to LYTE."
   Pop $0
+  SendMessage $0 ${WM_SETFONT} $ModernFont 0
+  SetCtlColors $0 0x666666 transparent
+
+  ; Start Menu checkbox with better spacing
+  ${NSD_CreateCheckBox} 20 105 90% 24 "Create Start Menu shortcut"
+  Pop $0
+  SendMessage $0 ${WM_SETFONT} $ModernFont 0
+  SetCtlColors $0 0x1A1A1A transparent
   ${NSD_SetState} $0 ${BST_CHECKED}
   ${NSD_OnClick} $0 OnStartMenuClick
   StrCpy $AddStartMenu ${BST_CHECKED}
 
-  ${NSD_CreateCheckBox} 20 65 100% 15 "Create Desktop shortcut"
+  ; Desktop checkbox
+  ${NSD_CreateCheckBox} 20 135 90% 24 "Create Desktop shortcut"
   Pop $0
+  SendMessage $0 ${WM_SETFONT} $ModernFont 0
+  SetCtlColors $0 0x1A1A1A transparent
   ${NSD_SetState} $0 ${BST_CHECKED}
   ${NSD_OnClick} $0 OnDesktopClick
   StrCpy $AddDesktop ${BST_CHECKED}
@@ -532,6 +623,19 @@ SectionEnd
 Function .onInstSuccess
   ; Installation completed successfully
   DetailPrint "Installation completed successfully!"
+FunctionEnd
+
+;--------------------------------
+; Install Files Page Enhancement
+;--------------------------------
+Function .onInstFilesPage
+  ; Enhance the install files page appearance
+  FindWindow $0 "#32770" "" $HWNDPARENT
+  GetDlgItem $1 $0 1006  ; Detail text control
+  ${If} $1 <> 0
+    SendMessage $1 ${WM_SETFONT} $ModernFont 0
+    SetCtlColors $1 0x1A1A1A transparent
+  ${EndIf}
 FunctionEnd
 
 ;--------------------------------
