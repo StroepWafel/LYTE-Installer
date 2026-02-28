@@ -192,6 +192,7 @@ Function VersionPageCreate
   SetCtlColors $VersionDropdown 0x1A1A1A 0xFFFFFF
   
   ${NSD_CB_AddString} $VersionDropdown "latest (recommended)"
+  ${NSD_CB_AddString} $VersionDropdown "1.11.0-Release"
   ${NSD_CB_AddString} $VersionDropdown "1.10.1-Release"
   ${NSD_CB_AddString} $VersionDropdown "1.10.0-Release"
   ${NSD_CB_AddString} $VersionDropdown "1.9.0-Release"
@@ -713,6 +714,7 @@ FunctionEnd
 ; Section Descriptions
 ;--------------------------------
 ; Note: Section descriptions are handled in the custom ComponentsPageCreate function
+
 
 
 
