@@ -120,7 +120,7 @@ def install(
     add_start_menu: bool,
     add_desktop: bool,
     uninstaller_path: str,
-    install_icon_path: str | None,
+    app_icon_path: str | None,
     progress_callback: Callable[[str, int, int], None] | None = None,
     log_callback: Callable[[str], None] | None = None,
 ) -> None:
@@ -186,9 +186,9 @@ def install(
     shutil.copy2(uninstaller_path, uninstall_dest)
     log("Uninstall LYTE.exe installed.")
 
-    # 4. Shortcuts
+    # 4. Shortcuts (use app icon for LYTE shortcuts)
     step("Creating shortcuts...", 4, 4)
-    icon_arg = install_icon_path if install_icon_path else lyte_exe
+    lyte_icon = app_icon_path if app_icon_path else lyte_exe
 
     if add_start_menu:
         start_menu = os.path.join(
@@ -200,7 +200,7 @@ def install(
         create_shortcut(
             lyte_exe,
             os.path.join(start_menu, "LYTE.lnk"),
-            icon_arg,
+            lyte_icon,
         )
         create_shortcut(
             uninstall_dest,
@@ -216,7 +216,7 @@ def install(
             create_shortcut(
                 lyte_exe,
                 os.path.join(desktop, "LYTE.lnk"),
-                icon_arg,
+                lyte_icon,
             )
             log("Desktop shortcut created.")
         else:

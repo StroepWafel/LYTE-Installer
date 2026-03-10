@@ -36,6 +36,7 @@ Place your images in `branding/`:
 |------|---------|
 | `branding/ico/install.ico` | Installer window/taskbar icon |
 | `branding/ico/uninstall.ico` | Uninstaller window icon |
+| `branding/ico/app.ico` | LYTE shortcut icon (Start Menu, Desktop) |
 | `branding/headerimage.bmp` or `header.png` | Banner at top of wizard pages |
 | `branding/wizard.bmp` or `sidebar.png` | Welcome/Finish sidebar (164×314 px) |
 

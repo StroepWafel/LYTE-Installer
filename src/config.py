@@ -16,6 +16,7 @@ else:
 # Icon paths (required for installer/uninstaller)
 INSTALL_ICON = os.path.join(_BASE, "ico", "install.ico")
 UNINSTALL_ICON = os.path.join(_BASE, "ico", "uninstall.ico")
+APP_ICON = os.path.join(_BASE, "ico", "app.ico")
 
 # Optional wizard images (fallback to solid color if missing)
 HEADER_IMAGE = os.path.join(_BASE, "headerimage.bmp")
@@ -48,3 +49,8 @@ def get_install_icon_path() -> str | None:
 def get_uninstall_icon_path() -> str | None:
     """Return path to uninstall icon if it exists."""
     return UNINSTALL_ICON if os.path.isfile(UNINSTALL_ICON) else None
+
+
+def get_app_icon_path() -> str | None:
+    """Return path to LYTE app icon (for shortcuts) if it exists."""
+    return APP_ICON if os.path.isfile(APP_ICON) else None

@@ -51,7 +51,7 @@ class InstallWorker(QThread):
     def run(self):
         try:
             url = get_download_url(self.version)
-            icon_path = config.get_install_icon_path()
+            app_icon_path = config.get_app_icon_path()
             install(
                 self.install_dir,
                 url,
@@ -59,7 +59,7 @@ class InstallWorker(QThread):
                 self.add_start_menu,
                 self.add_desktop,
                 self.uninstaller_path,
-                icon_path,
+                app_icon_path,
                 lambda msg, cur, tot: self.progress.emit(msg, cur, tot),
                 lambda line: self.log_line.emit(line),
             )
