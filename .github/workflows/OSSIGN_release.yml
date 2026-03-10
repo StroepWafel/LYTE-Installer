@@ -20,28 +20,25 @@ jobs:
       actions: write
       contents: read
     steps:
-      # Checkout the code and build the NSIS installer
-      # to make sure everything works as expected
+      # Checkout the code and build the Python installer
       - uses: actions/checkout@v5
 
-      - name: Install NSIS
-        run: choco install nsis -y
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-      - name: Add NSIS to PATH
-        run: echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-  
-      - name: Copy inetc plugin DLLs
-        shell: bash
-        run: |
-          rm -rf plugins Plugins
-          curl -o Inetc.zip https://nsis.sourceforge.io/mediawiki/images/c/c9/Inetc.zip
-          unzip Inetc.zip
-          cp Plugins/x86-unicode/INetC.dll "C:/Program Files (x86)/NSIS/Plugins/x86-unicode/inetc.dll"
-          cp Plugins/x86-ansi/INetC.dll "C:/Program Files (x86)/NSIS/Plugins/x86-ansi/inetc.dll"
-          rm Inetc.zip
+      - name: Install dependencies
+        run: pip install -r requirements.txt pyinstaller
 
-      - name: Compile NSIS installer
-        run: makensis LYTEInstaller.nsi
+      - name: Build uninstaller
+        run: pyinstaller uninstaller.spec
+
+      - name: Build installer
+        run: pyinstaller installer.spec
+
+      - name: Copy installer for OSSign
+        run: copy dist\LYTE_Installer.exe LYTE_Installer.exe
 
       # Dispatch a request to the OSSign repo for build + signing
       - name: Dispatch to OSSign
