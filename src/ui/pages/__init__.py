@@ -1,1 +1,0 @@
-# LYTE Installer wizard pages

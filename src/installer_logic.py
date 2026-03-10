@@ -38,6 +38,56 @@ def download_file(url: str, dest: str, progress_callback: Callable[[int, int], N
                         progress_callback(written, total)
 
 
+def get_user_desktop_path() -> str | None:
+    """
+    Get the Desktop path for the logged-in user (not admin).
+    When running elevated, USERPROFILE points to the wrong user.
+    """
+    ps = r"""
+$user = (Get-CimInstance Win32_ComputerSystem).UserName
+if (-not $user) { 
+    $public = [Environment]::GetFolderPath('CommonDesktopDirectory')
+    if (Test-Path $public) { Write-Output $public }
+    exit 0 
+}
+$username = $user.Split('\')[-1]
+$profiles = Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList' -ErrorAction SilentlyContinue
+foreach ($p in $profiles) {
+    try {
+        $path = (Get-ItemProperty -Path $p.PSPath -Name ProfileImagePath -ErrorAction Stop).ProfileImagePath
+        if ($path -and $path -like "*\$username") {
+            $desktop = Join-Path $path "Desktop"
+            $oneDrive = Join-Path $path "OneDrive\Desktop"
+            if (Test-Path $oneDrive) { $desktop = $oneDrive }
+            if (Test-Path $desktop) { Write-Output $desktop; exit 0 }
+        }
+    } catch {}
+}
+$public = [Environment]::GetFolderPath('CommonDesktopDirectory')
+if (Test-Path $public) { Write-Output $public }
+"""
+    try:
+        result = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", ps],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except (subprocess.TimeoutExpired, OSError):
+        pass
+    # Fallback: try USERPROFILE (works when not elevated)
+    for subpath in ("Desktop", "OneDrive\\Desktop"):
+        desktop = os.path.join(os.environ.get("USERPROFILE", ""), subpath)
+        if os.path.isdir(desktop):
+            return desktop
+    # Public Desktop
+    public = os.environ.get("PUBLIC", "C:\\Users\\Public")
+    public_desktop = os.path.join(public, "Desktop")
+    return public_desktop if os.path.isdir(public_desktop) else None
+
+
 def create_shortcut(target: str, shortcut_path: str, icon_path: str | None = None) -> None:
     """Create a Windows shortcut (.lnk) using PowerShell."""
     env = os.environ.copy()
@@ -160,8 +210,8 @@ def install(
         log("Start Menu shortcuts created.")
 
     if add_desktop:
-        desktop = os.path.join(os.environ.get("USERPROFILE", ""), "Desktop")
-        if os.path.isdir(desktop):
+        desktop = get_user_desktop_path()
+        if desktop and os.path.isdir(desktop):
             log("Creating Desktop shortcut...")
             create_shortcut(
                 lyte_exe,
@@ -169,6 +219,8 @@ def install(
                 icon_arg,
             )
             log("Desktop shortcut created.")
+        else:
+            log("Could not find Desktop folder, skipping Desktop shortcut.")
 
     # 5. Registry
     log("Writing registry entries...")
