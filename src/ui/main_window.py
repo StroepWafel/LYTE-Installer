@@ -7,7 +7,7 @@ import os
 import sys
 
 from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -92,6 +92,16 @@ class MainWindow(QWidget):
         layout = QVBoxLayout(self)
         layout.setSpacing(16)
         layout.setContentsMargins(24, 8, 24, 24)
+
+        # Header image (banner at top)
+        header_path = config.get_header_path()
+        if header_path and os.path.isfile(header_path):
+            header_label = QLabel()
+            pixmap = QPixmap(header_path)
+            if not pixmap.isNull():
+                header_label.setPixmap(pixmap.scaledToWidth(512, Qt.TransformationMode.SmoothTransformation))
+                header_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                layout.addWidget(header_label)
 
         self.stack = QStackedWidget()
         self.stack.setObjectName("stack")
@@ -243,6 +253,10 @@ class MainWindow(QWidget):
         title = QLabel("Installing...")
         title.setProperty("class", "title")
         layout.addWidget(title)
+        ps_note = QLabel("Note: A PowerShell window may briefly flash during installation when creating shortcuts—this is normal.")
+        ps_note.setProperty("class", "secondary")
+        ps_note.setWordWrap(True)
+        layout.addWidget(ps_note)
         self.progress_label = QLabel("Preparing...")
         self.progress_label.setProperty("class", "secondary")
         layout.addWidget(self.progress_label)

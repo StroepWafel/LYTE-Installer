@@ -110,6 +110,7 @@ $s.Save()
         env=env,
         check=True,
         capture_output=True,
+        creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
     )
 
 
